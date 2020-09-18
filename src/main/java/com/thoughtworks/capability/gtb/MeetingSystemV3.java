@@ -1,6 +1,9 @@
 package com.thoughtworks.capability.gtb;
 
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -17,25 +20,35 @@ import java.time.format.DateTimeFormatter;
  */
 public class MeetingSystemV3 {
 
+  private static final String LONDON_ZONE_ID = "Europe/London";
+  private static final String CHICAGO_ZONE_ID = "America/Chicago";
+
   public static void main(String[] args) {
-    String timeStr = "2020-04-01 14:30:00";
+    String timeStr = "2020-12-01 14:30:00";
 
     // 根据格式创建格式化类
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     // 从字符串解析得到会议时间
     LocalDateTime meetingTime = LocalDateTime.parse(timeStr, formatter);
 
-    LocalDateTime now = LocalDateTime.now();
-    if (now.isAfter(meetingTime)) {
+    LocalDateTime now = LocalDateTime.now(ZoneId.of(LONDON_ZONE_ID));
+    if (Period.between(now.toLocalDate(), meetingTime.toLocalDate()).isNegative()) {
       LocalDateTime tomorrow = now.plusDays(1);
       int newDayOfYear = tomorrow.getDayOfYear();
       meetingTime = meetingTime.withDayOfYear(newDayOfYear);
+
+      ZonedDateTime zonedDateTimeAtLondon = ZonedDateTime.of(meetingTime, ZoneId.of(LONDON_ZONE_ID));
+      ZonedDateTime zonedDateTimeAtChicago = zonedDateTimeAtLondon.withZoneSameInstant(ZoneId.of(CHICAGO_ZONE_ID));
+      meetingTime = zonedDateTimeAtChicago.toLocalDateTime();
 
       // 格式化新会议时间
       String showTimeStr = formatter.format(meetingTime);
       System.out.println(showTimeStr);
     } else {
       System.out.println("会议还没开始呢");
+      System.out.printf("距离会议开始还有%d个月%d天\n",
+              Period.between(now.toLocalDate(), meetingTime.toLocalDate()).getMonths(),
+              Period.between(now.toLocalDate(), meetingTime.toLocalDate()).getDays());
     }
   }
 }
